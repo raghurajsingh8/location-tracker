@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Form</title>
+    <script>
+        function detectLocation() {
+            // First check if geolocation is available
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    // Success: get coordinates
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+                    console.log("Latitude: " + lat + " Longitude: " + lon); // Debugging
+
+                    // Use Nominatim (OpenStreetMap) to reverse geocode the coordinates
+                    var url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
+
+                    // Make an API request to get the address details
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.address) {
+                                var state = data.address.state || '';
+                                var city = data.address.city || data.address.town || data.address.village || '';
+                                
+                                // Fill the form with the detected data
+                                document.getElementById('state').value = state;
+                                document.getElementById('city').value = city;
+                                document.getElementById('coordinates').value = lat + ", " + lon;
+
+                                // Generate OpenStreetMap link for the coordinates
+                                var osmLink = "https://www.openstreetmap.org/?mlat=" + lat + "&mlon=" + lon + "#map=12/" + lat + "/" + lon;
+                                document.getElementById('mapLink').href = osmLink;
+
+                                // Show a static map from OpenStreetMap without an API key
+                                var mapImg = "https://staticmap.openstreetmap.org/staticmap.php?center=" + lat + "," + lon + "&zoom=12&size=500x300&maptype=mapnik";
+                                document.getElementById('mapImage').src = mapImg;
+                            } else {
+                                alert('No address found for this location.');
+                            }
+                        })
+                        .catch(error => {
+                            alert('Error fetching address: ' + error);
+                            console.error('Error:', error);
+                        });
+
+                }, function(error) {
+                    // Error in getting the location
+                    alert('Error occurred: ' + error.message);
+                    console.log('Error: ' + error.message); // Debugging
+                });
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+    </script>
+</head>
+<body>
+    <h2>User Location Form</h2>
+    <form action="#" method="post">
+        <label for="state">State:</label>
+        <input type="text" id="state" name="state" readonly><br><br>
+
+        <label for="city">City:</label>
+        <input type="text" id="city" name="city" readonly><br><br>
+
+        <label for="coordinates">Coordinates:</label>
+        <input type="text" id="coordinates" name="coordinates" readonly><br><br>
+
+        <label for="mapLink">Location on OpenStreetMap:</label>
+        <a id="mapLink" href="#" target="_blank">View on OpenStreetMap</a><br><br>
+
+        <label>Map Preview:</label><br>
+        <img id="mapImage" src="" alt="Map Preview" style="width: 500px; height: 300px;"><br><br>
+
+        <button type="button" onclick="detectLocation()">Detect Location</button>
+    </form>
+</body>
+</html>
